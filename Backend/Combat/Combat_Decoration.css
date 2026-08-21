@@ -98,42 +98,58 @@ body {
 }
 
 .sprite-canvas {
-    width: 160px;
-    height: 160px;
-    /* บังคับให้ภาพพื้นหลังขยายเป็น 3 เท่า เพื่อให้แสดงผลทีละ 1 ช่องจากตาราง 3x3 */
-    background-size: 300% 300%; 
+    /* 1. ปรับขนาดกล่องให้เป็นสี่เหลี่ยมจัตุรัส เพื่อให้คำนวณ Grid 3x3 ได้เป๊ะ 100% */
+    width: 250px;  
+    height: 250px; 
+    
     background-repeat: no-repeat;
-    image-rendering: pixelated; /* รักษาความคมชัดของ Pixel */
+    image-rendering: pixelated;
     position: relative;
     z-index: 2;
+    
+    /* 2. ถ้าตัวเล็กไป ให้เพิ่มตัวเลข Scale ตรงนี้ (เช่น 1.2 หรือ 1.5) */
+    transform-origin: bottom center; 
 }
-
 /* สร้างเงาใต้เท้า */
 .sprite-canvas::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: -5px;
     left: 15%;
-    width: 70%;
+    width: 128px;
     height: 15px;
     background-color: rgba(0, 0, 0, 0.5);
     border-radius: 50%;
     z-index: -1;
 }
 
+.act-idle { 
+    background-size: contain; 
+    background-position: bottom center; 
+}
+
+
+.char-aero.act-idle { background-image: url('../../Frontend/asset/Character/aero.png'); }
+.char-flex.act-idle { background-image: url('../../Frontend/asset/Character/Flex.png'); }
+.char-torque.act-idle { background-image: url('../../Frontend/asset/Character/ttorque.png'); } /* สมมติว่ามีรูป Torque.png */
+
+.sprite-canvas:not(.act-idle) {
+    background-size: 300% 300%;
+}
+
 /* --- กำหนดภาพของแต่ละสาย --- */
 .char-aero { background-image: url('../../Frontend/asset/Character/aero_action.png'); }
-.char-flex { background-image: url('../../Frontend/asset/Character/aero_action.png'); } /* อ้างอิงไฟล์รูปที่คุณส่งมา */
+.char-flex { background-image: url('../../Frontend/asset/Character/flex_action.png'); } /* อ้างอิงไฟล์รูปที่คุณส่งมา */
 .char-torque { background-image: url('../../Frontend/asset/Character/torque_action.png'); }
 
 /* --- กำหนดตำแหน่งภาพแต่ละ Action (อิงจากตาราง 3x3) --- */
-.act-idle { background-position: 0% 50%; }    /* แถวกลาง ซ้ายสุด: ท่ายืนเตรียมพร้อม */
-.act-attack { background-position: 0% 0%; }   /* แถวบน ซ้ายสุด: ปล่อยพลัง */
-.act-strike { background-position: 50% 0%; }  /* แถวบน ตรงกลาง: หมุนตัวเตะ/ฟาด */
-.act-magic { background-position: 100% 0%; }  /* แถวบน ขวาสุด: ทุบพื้นน้ำกระจาย */
+.act-magic { background-position: 0% 0%; }   /* แถวบน ซ้ายสุด: ปล่อยพลัง */
+.act-attack { background-position: 50% 0%; }  /* แถวบน ตรงกลาง: หมุนตัวเตะ/ฟาด */
+.act-strike { background-position: 100% 0%; }   /* แถวบน ซ้ายสุด: ปล่อยพลัง */
 
-.act-defend { background-position: 50% 50%; } /* แถวกลาง ตรงกลาง: กางโล่ป้องกัน */
-.act-counter { background-position: 100% 50%;}/* แถวกลาง ขวาสุด: กางโล่สะท้อน */
+.act-clense { background-position: 0% 53%; }  /* แถวกลาง ซ้ายสุด: ปัด/ล้าง */
+.act-defend { background-position: 50% 53%; } /* แถวกลาง ตรงกลาง: กางโล่ป้องกัน */
+.act-counter { background-position: 100% 53%;}/* แถวกลาง ขวาสุด: กางโล่สะท้อน */
 
 .act-hit { background-position: 0% 100%; }    /* แถวล่าง ซ้ายสุด: โดนโจมตีผงะ */
 .act-lowhp { background-position: 50% 100%; } /* แถวล่าง ตรงกลาง: คุกเข่าหอบ */
@@ -225,6 +241,11 @@ body {
     z-index: 100;
 }
 
+.level-up-modal button {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+}
+
 .level-up-modal h2 {
     color: #ffeb3b;
     margin-top: 0;
@@ -250,4 +271,20 @@ body {
     color: #fff;
     background-color: transparent;
     font-size: 12px;
+}
+
+.btn-dev {
+    font-family: 'Press Start 2P', cursive; /* ฟอนต์เดียวกับระบบ */
+    font-size: 8px;
+    background-color: #8b0000;
+    color: #fff;
+    border: 2px solid #ffaaaa;
+    padding: 5px 10px;
+    margin-top: 10px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #000;
+}
+.btn-dev:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #000;
 }

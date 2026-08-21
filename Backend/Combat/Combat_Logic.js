@@ -85,6 +85,31 @@ function calculateDamage(attacker, defender, atkMove, defMove) {
 // 4. UI Controllers
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+function playAnimation(targetId, actionClass, durationMs) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+
+    // ลบ Class ท่าทางเก่าออก และใส่ท่าใหม่เข้าไป
+    el.className = el.className.replace(/act-\w+/g, '').trim();
+    el.classList.add(actionClass);
+
+    // เมื่อหมดเวลา ให้กลับเป็นท่ายืนปกติ หรือท่าตาย
+    if (durationMs) {
+        setTimeout(() => {
+            el.classList.remove(actionClass);
+            let targetObj = targetId === 'player-sprite' ? player : enemy;
+            
+            if (targetObj.hp <= 0) {
+                el.classList.add('act-dead');
+            } else if (targetObj.hp <= targetObj.maxHp * 0.3) {
+                el.classList.add('act-lowhp');
+            } else {
+                el.classList.add('act-idle');
+            }
+        }, durationMs);
+    }
+}
+
 function toggleButtons(state) {
     btn1.disabled = !state;
     btn2.disabled = !state;
@@ -155,8 +180,11 @@ async function handleTurn(playerMove) {
     toggleButtons(false);
 
     let atkMove, defMove, attacker, defender, enemyMove;
+    let attackerSpriteId, defenderSpriteId; // เพิ่มตัวแปรเก็บ ID ของ Sprite
 
-    // เฟส 1: ระบุว่าใครเป็นคนตี ใครเป็นคนรับ
+    // ==========================================
+    // เฟส 1: ระบุบทบาท (ใครตี ใครรับ) และสุ่มท่าศัตรู
+    // ==========================================
     if (isPlayerAttacker) {
         const enemyDefMoves = ['DEFEND', 'COUNTER', 'CLENSE'];
         enemyMove = enemyDefMoves[Math.floor(Math.random() * enemyDefMoves.length)];
@@ -164,6 +192,8 @@ async function handleTurn(playerMove) {
         defMove = enemyMove;
         attacker = player;
         defender = enemy;
+        attackerSpriteId = 'player-sprite';
+        defenderSpriteId = 'enemy-sprite';
         logText.innerText = `You prepare to ${atkMove}...`;
     } else {
         const enemyAtkMoves = ['ATTACK', 'STRIKE', 'MAGIC'];
@@ -172,20 +202,46 @@ async function handleTurn(playerMove) {
         defMove = playerMove;
         attacker = enemy;
         defender = player;
+        attackerSpriteId = 'enemy-sprite';
+        defenderSpriteId = 'player-sprite';
         logText.innerText = `Enemy prepares to ${atkMove}! You use ${defMove}.`;
     }
 
+    // สร้างความตื่นเต้นก่อนศัตรูเผยท่า
+    enemyActionText.innerText = `Enemy choice: ?????`;
     await sleep(800);
-    enemyActionText.innerText = `Enemy choice: ?????`; // สร้างความตื่นเต้น
-    await sleep(600);
     enemyActionText.innerText = `Enemy choice: ${enemyMove}`;
 
-    // เฟส 2: คำนวณดาเมจ
+    // ==========================================
+    // เฟส 2: แสดง Animation การออกท่าทาง (โจมตี และ ป้องกัน)
+    // ==========================================
+    // ดึงชื่อท่ามาแปลงเป็นตัวพิมพ์เล็กเพื่อใช้เป็นคลาส (เช่น ATTACK -> act-attack)
+    playAnimation(attackerSpriteId, `act-${atkMove.toLowerCase()}`, 1000);
+    playAnimation(defenderSpriteId, `act-${defMove.toLowerCase()}`, 1000);
+    
+    // รอให้ Animation ออกท่าเล่นไปสักพักค่อยคิดดาเมจ (ให้ภาพกับตัวเลขสัมพันธ์กัน)
+    await sleep(800);
+
+    // ==========================================
+    // เฟส 3: คำนวณดาเมจ อัปเดตเลือด และเล่นท่าโดนตี
+    // ==========================================
     const result = calculateDamage(attacker, defender, atkMove, defMove);
     defender.hp = Math.max(0, defender.hp - result.toDefender);
     attacker.hp = Math.max(0, attacker.hp - result.toAttacker);
-    
-    // เฟส 3: รายงานผล (Combat Log)
+
+    // แสดง Animation โดนตี กระตุก 500ms
+    if (result.toDefender > 0) {
+        playAnimation(defenderSpriteId, 'act-hit', 500);
+    }
+    if (result.toAttacker > 0) {
+        playAnimation(attackerSpriteId, 'act-hit', 500); // กรณีโดน Counter สวนกลับ
+    }
+
+    updateUI(); // อัปเดตหลอดเลือดให้ลดลงทันทีตอนโดนตี
+
+    // ==========================================
+    // เฟส 4: รายงานผล (Combat Log)
+    // ==========================================
     if (result.toDefender > 0) {
         logText.innerText += `\n-> ${attacker === player ? 'Enemy' : 'You'} took ${result.toDefender} damage!`;
     } else if (result.toDefender === 0 && atkMove === 'MAGIC' && defMove === 'CLENSE') {
@@ -196,36 +252,46 @@ async function handleTurn(playerMove) {
         logText.innerText += `\n-> COUNTER SUCCESS! ${attacker === player ? 'You' : 'Enemy'} took ${result.toAttacker} damage!`;
     }
 
+    // หน่วงเวลาให้ผู้เล่นอ่าน Log และดู Animation แป๊บหนึ่ง
+    await sleep(1500);
+
+    // ==========================================
+    // เฟส 5: เช็คผลแพ้ชนะ
+    // ==========================================
     if (enemy.hp <= 0) {
         logText.innerText = "BATTLE WON!";
         enemyActionText.innerText = "-";
-        gainExp(enemy.expDrop); // เรียกใช้ฟังก์ชันรับ EXP
-        return; 
+        gainExp(enemy.expDrop); 
+        return; // จบการทำงาน ศัตรูจะค้างที่ท่า act-dead อัตโนมัติจากฟังก์ชัน playAnimation
     } else if (player.hp <= 0) {
         logText.innerText = "YOU DIED!";
         enemyActionText.innerText = "-";
         return; 
     }
 
-    updateUI();
-    await sleep(1500);
-
-    // เฟส 4: เช็คผลแพ้ชนะ
-    if (enemy.hp <= 0 || player.hp <= 0) {
-        logText.innerText = player.hp > 0 ? "BATTLE WON!" : "YOU DIED!";
-        enemyActionText.innerText = "-";
-        return; 
-    }
-
-    // เฟส 5: สลับเทิร์นและเตรียมเริ่มรอบใหม่
+    // ==========================================
+    // เฟส 6: สลับเทิร์นและเตรียมเริ่มรอบใหม่
+    // ==========================================
     isPlayerAttacker = !isPlayerAttacker;
-    updateUI(); // เปลี่ยนชุดปุ่ม
+    updateUI(); // สลับชุดปุ่มกดตามเทิร์น
     
     logText.innerText = isPlayerAttacker ? "Your turn to ATTACK!" : "Enemy is preparing to attack. Choose DEFENSE!";
     enemyActionText.innerText = "-";
     
     isWaiting = false;
     toggleButtons(true);
+}
+
+function forceLevelUp() {
+    if (isWaiting) return; // ป้องกันการกดแทรกตอนกำลังเล่นแอนิเมชันตีกัน
+    
+    // คำนวณหา EXP ที่ยังขาดอยู่ เพื่อให้พอดีกับการอัปเลเวล 1 ขั้น
+    const neededExp = player.expToNext - player.exp;
+    
+    logText.innerText = "[DEV] Cheat Activated!";
+    
+    // โยน EXP ให้ผู้เล่น
+    gainExp(neededExp);
 }
 
 async function gainExp(amount) {
