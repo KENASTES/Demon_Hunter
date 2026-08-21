@@ -16,7 +16,7 @@
 
             <!-- ซ้ายบน: ฝั่งผู้เล่น -->
             <div class="hud-panel player-hud">
-                <h2 class="char-name">Hunter</h2>
+                <h2 class="char-name">Hunter <span class="level-badge" id="player-level-text">Lv.1</span></h2>
                 <div class="hp-bar-bg">
                     <div class="hp-bar player-hp" id="player-hp-bar"></div>
                 </div>
@@ -30,7 +30,7 @@
 
             <!-- ขวาบน: ฝั่งศัตรู -->
             <div class="hud-panel enemy-hud">
-                <h2 class="char-name">Goblin</h2>
+                <h2 class="char-name">Goblin <span class="level-badge" id="enemy-level-text">Lv.1</span></h2>
                 <div class="hp-bar-bg">
                     <div class="hp-bar enemy-hp" id="enemy-hp-bar"></div>
                 </div>
@@ -45,36 +45,32 @@
         </div>
 
         <!-- โซนตรงกลาง: พื้นที่ว่างสำหรับแสดงกราฟิก/Pixel Art ในอนาคต -->
+
+
         <div class="battle-stage">
-            <!-- ซ้าย: ฝั่งผู้เล่น -->
-            <div class="sprite-placeholder player-sprite" id="player-sprite">
-                <span>Player<br>Sprite</span>
-            </div>
-
-            <!-- ขวา: ฝั่งศัตรู -->
-            <div class="sprite-placeholder enemy-sprite" id="enemy-sprite">
-                <span>Enemy<br>Sprite</span>
-            </div>
-
             <div class="battle-stage">
-                <div class="sprite-placeholder player-sprite" id="player-sprite"><span>Player</span></div>
-                <div class="sprite-placeholder enemy-sprite" id="enemy-sprite"><span>Enemy</span></div>
+            <!-- ซ้าย: ฝั่งผู้เล่น (เลือกสาย Flex ท่ายืนรอ) -->
+            <div class="sprite-canvas char-flex act-idle" id="player-sprite"></div>
+            
+            <!-- หน้าต่าง Level Up (คงโค้ดเดิมไว้) ... -->
+            
+            <!-- ขวา: ฝั่งศัตรู (สมมติให้ศัตรูเป็นสาย Torque) -->
+            <div class="sprite-canvas enemy-sprite char-torque act-idle" id="enemy-sprite"></div>
+        </div>
+            <!-- หน้าต่าง Level Up (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+            <div id="level-up-modal" class="level-up-modal" style="display: none;">
+                <h2>LEVEL UP!</h2>
+                <p>Level: <span id="current-level">1</span></p>
+                <p>Points: <span id="stat-points" style="color: #ffeb3b; font-weight: bold; font-size: 20px;">0</span>
+                </p>
 
-                <!-- หน้าต่าง Level Up (ซ่อนไว้เป็นค่าเริ่มต้น) -->
-                <div id="level-up-modal" class="level-up-modal" style="display: none;">
-                    <h2>LEVEL UP!</h2>
-                    <p>Level: <span id="current-level">1</span></p>
-                    <p>Points: <span id="stat-points"
-                            style="color: #ffeb3b; font-weight: bold; font-size: 20px;">0</span></p>
-
-                    <div class="stat-alloc-buttons">
-                        <button onclick="allocateStat('atk')">ATK +1</button>
-                        <button onclick="allocateStat('def')">DEF +1</button>
-                        <button onclick="allocateStat('mag')">MAG +1</button>
-                    </div>
-                    <button onclick="closeLevelUpModal()" id="btn-close-modal" style="margin-top: 15px; width: 100%;"
-                        disabled>Confirm</button>
+                <div class="stat-alloc-buttons">
+                    <button onclick="allocateStat('atk')">ATK +1</button>
+                    <button onclick="allocateStat('def')">DEF +1</button>
+                    <button onclick="allocateStat('mag')">MAG +1</button>
                 </div>
+                <button onclick="closeLevelUpModal()" id="btn-close-modal" style="margin-top: 15px; width: 100%;"
+                    disabled>Confirm</button>
             </div>
         </div>
 

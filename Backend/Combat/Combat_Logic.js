@@ -32,58 +32,53 @@ const btn2 = document.getElementById('btn-strike');
 const btn3 = document.getElementById('btn-magic');
 
 // 3. Core Logic: ตารางคำนวณดาเมจ (ปรับสมการใหม่ให้ตีเข้าเสมอ)
+// 3. Core Logic: สูตรคำนวณดาเมจแบบปรับสมดุลใหม่ (ตีแรงขึ้น เจ็บขึ้น)
 function calculateDamage(attacker, defender, atkMove, defMove) {
-    let dmgToDefender = 0;
-    let dmgToAttacker = 0;
+    let rawDmgToDefender = 0;
+    let rawDmgToAttacker = 0;
 
-    // ดึงค่าสเตตัสมาเก็บในตัวแปรสั้นๆ เพื่อให้สูตรดูอ่านง่าย
     const a_atk = attacker.stats.atk;
-    const a_def = attacker.stats.def;
+    const a_def = defender.stats.def;
     const a_mag = attacker.stats.mag;
     
     const d_atk = defender.stats.atk;
     const d_def = defender.stats.def;
-    const d_mag = defender.stats.mag; // ในที่นี้ใช้ MAG เป็นค่าต้านทานเวทย์ไปในตัว
-
-    // ฟังก์ชันคำนวณสมการ RPG มาตรฐาน: (Power^2) / (Power + Defense)
-    const calcHit = (power, resistance) => {
-        return (power * power) / (power + resistance);
-    };
+    const d_mag = defender.stats.mag;
 
     if (atkMove === 'ATTACK') {
         if (defMove === 'DEFEND') {
-            // โจมตีปกติ เจอป้องกัน: ฝั่งรับได้โบนัส DEF 2 เท่า
-            dmgToDefender = calcHit(a_atk, d_def * 2);
+            // โจมตีปกติ เจอตั้งรับ: ลดดาเมจเหลือประมาณ 50% แต่ไม่ต่ำกว่า 3 หน่วย
+            rawDmgToDefender = Math.max(3, (a_atk * 1.2) - (d_def * 0.8));
         } else {
-            // โจมตีปกติ: หักลบด้วย DEF ปกติ
-            dmgToDefender = calcHit(a_atk, d_def);
+            // โจมตีปกติธรรมดา: ATK นำ ลบด้วย DEF ที่มีสัดส่วนน้อยลง
+            rawDmgToDefender = Math.max(5, (a_atk * 1.5) - (d_def * 0.5));
         }
     } 
     else if (atkMove === 'STRIKE') {
         if (defMove === 'COUNTER') {
-            // โจมตีหนัก โดนสวนกลับ: ผู้โจมตีรับดาเมจแทน โดยศัตรูสวนด้วย ATK 1.5 เท่า เจาะ DEF เรา
-            dmgToAttacker = calcHit(d_atk * 1.5, a_def); 
+            // โจมตีหนักเจอเคาน์เตอร์: โดนสวนเจ็บหนักมาก (ATK ศัตรูคูณ 2)
+            rawDmgToAttacker = Math.max(8, (d_atk * 2.0) - (a_def * 0.3)); 
         } else {
-            // โจมตีหนัก ทะลุการป้องกัน: พลังโจมตี (ATK) ของเราคูณ 2 แต่ศัตรูใช้ DEF ปกติ
-            dmgToDefender = calcHit(a_atk * 2, d_def); 
+            // โจมตีหนักทะลุทะลวง: ดาเมจแรงสะใจ (ATK คูณ 2)
+            rawDmgToDefender = Math.max(10, (a_atk * 2.2) - (d_def * 0.4)); 
         }
     } 
     else if (atkMove === 'MAGIC') {
         if (defMove === 'CLENSE') {
-            // เวทย์ เจอ ล้างเวทย์: ดาเมจเป็น 0 สมบูรณ์แบบ
-            dmgToDefender = 0; 
+            // เวทย์เจอแก้ทาง: 0
+            rawDmgToDefender = 0; 
         } else {
-            // เวทย์: ใช้ MAG ฝั่งเรา โจมตีใส่ MAG ฝั่งศัตรู
-            dmgToDefender = calcHit(a_mag * 1.5, d_mag); 
+            // เวทย์: เจาะเกราะกายภาพ ใช้ MAG ล้วนๆ แทบไม่สน DEF
+            rawDmgToDefender = Math.max(8, (a_mag * 1.8) - (d_mag * 0.2)); 
         }
     }
 
-    // สุ่มดาเมจแกว่ง (Variance ±10%) แล้วปัดเศษให้เป็นจำนวนเต็ม
-    const variance = (val) => Math.floor(val * (0.9 + Math.random() * 0.2));
+    // สุ่มแกว่ง ±10% เพื่อความตื่นเต้น
+    const variance = (val) => val === 0 ? 0 : Math.floor(val * (0.9 + Math.random() * 0.2));
     
     return { 
-        toDefender: variance(dmgToDefender), 
-        toAttacker: variance(dmgToAttacker) 
+        toDefender: variance(rawDmgToDefender), 
+        toAttacker: variance(rawDmgToAttacker) 
     };
 }
 
@@ -97,12 +92,16 @@ function toggleButtons(state) {
 }
 
 function updateUI() {
+    document.getElementById('player-level-text').innerText = `Lv.${player.level}`;
     document.getElementById('player-hp-text').innerText = `${player.hp} / ${player.maxHp}`;
     document.getElementById('player-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
     document.getElementById('player-atk').innerText = player.stats.atk;
     document.getElementById('player-def').innerText = player.stats.def;
     document.getElementById('player-mag').innerText = player.stats.mag;
+    document.getElementById('player-hp-text').innerText = `${player.hp} / ${player.maxHp}`;
+    document.getElementById('player-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
     
+    document.getElementById('enemy-level-text').innerText = `Lv.${enemy.level}`;
     document.getElementById('enemy-hp-text').innerText = `${enemy.hp} / ${enemy.maxHp}`;
     document.getElementById('enemy-hp-bar').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
     document.getElementById('enemy-atk').innerText = enemy.stats.atk;
@@ -118,6 +117,34 @@ function updateUI() {
         btn1.innerText = "Defend";  btn1.onclick = () => handleTurn('DEFEND');
         btn2.innerText = "Counter"; btn2.onclick = () => handleTurn('COUNTER');
         btn3.innerText = "Clense";  btn3.onclick = () => handleTurn('CLENSE');
+    }
+}
+
+// ฟังก์ชันสำหรับเล่น Animation
+function playAnimation(targetId, actionClass, durationMs) {
+    const el = document.getElementById(targetId);
+    
+    // ลบ Class Action เก่าออกให้หมดก่อน
+    el.className = el.className.replace(/act-\w+/g, '');
+    
+    // ใส่ Class Action ใหม่ (เช่น act-attack, act-hit)
+    el.classList.add(actionClass);
+
+    // ถ้ามีการตั้งเวลา ให้กลับมาท่ายืนปกติ (หรือท่าตาย) เมื่อหมดเวลา
+    if (durationMs) {
+        setTimeout(() => {
+            el.classList.remove(actionClass);
+            
+            // เช็คว่าตายหรือยัง ถ้าตายให้นอนค้าง ถ้าเลือดเหลือน้อยให้คุกเข่า
+            let targetObj = targetId === 'player-sprite' ? player : enemy;
+            if (targetObj.hp <= 0) {
+                el.classList.add('act-dead');
+            } else if (targetObj.hp <= targetObj.maxHp * 0.3) {
+                el.classList.add('act-lowhp'); // เลือดต่ำกว่า 30% ให้คุกเข่า
+            } else {
+                el.classList.add('act-idle');
+            }
+        }, durationMs);
     }
 }
 

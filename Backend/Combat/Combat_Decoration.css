@@ -1,20 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 body {
-    font-family: 'Courier New', Courier, monospace;
+    /* ใช้ฟอนต์ Pixel กับทุกอย่างในหน้าเว็บ */
+    font-family: 'Press Start 2P', cursive;
     background-color: #1a1a1a;
     color: #fff;
     margin: 0;
-    overflow: hidden; /* ป้องกันไม่ให้มีแถบ Scrollbar โผล่มาเวลากดเต็มจอ */
+    overflow: hidden;
+    /* ย่อขนาดฟอนต์ลงนิดนึงเพราะฟอนต์แนวนี้ตัวจะใหญ่ */
+    font-size: 12px; 
 }
 
 .combat-wrapper {
-    width: 100vw; /* กว้าง 100% ของหน้าจอ */
-    height: 100vh; /* สูง 100% ของหน้าจอ */
-    background-color: #2a2a2a;
+    width: 100vw;
+    height: 100vh;
+    background-color: #222;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-sizing: border-box; /* ป้องกันไม่ให้ Padding ดันขนาดกล่องทะลุจอ */
-    /* เอาขอบ (border) และมุมโค้ง (border-radius) ออกเพื่อให้เนียนชิดขอบจอ */
+    box-sizing: border-box;
 }
 
 /* ================= HUD ด้านบน ================= */
@@ -26,31 +30,37 @@ body {
 }
 
 .hud-panel {
-    width: 40%;
+    /* สร้างกรอบแบบเกมยุคเก่า (ขอบขาว เงาดำทึบ) */
+    background-color: #0000aa; /* พื้นหลังสีน้ำเงินเข้มแบบเกมคลาสสิก */
+    border: 4px solid #ffffff;
+    box-shadow: 4px 4px 0px #000000;
+    padding: 15px;
+    margin: 10px;
 }
 
 .player-hud { text-align: left; }
 .enemy-hud { text-align: right; }
 
 .char-name {
-    margin: 0 0 5px 0;
-    font-size: 24px;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 0 #000;
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #ffff00;
+    text-shadow: 2px 2px 0px #000;
 }
 
 .hp-bar-bg {
     width: 100%;
-    height: 24px;
-    background-color: #333;
-    border: 2px solid #000;
-    border-radius: 4px;
-    overflow: hidden;
+    height: 20px;
+    background-color: #222;
+    border: 4px solid #fff; /* ขอบหนาแบบ Pixel */
+    box-shadow: 4px 4px 0px #000;
+    margin-bottom: 10px;
 }
 
 .hp-bar {
     height: 100%;
     transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: none; 
 }
 
 .player-hp { background-color: #4caf50; }
@@ -87,50 +97,58 @@ body {
     background-color: #222; /* สีพื้นหลังชั่วคราว */
 }
 
-.sprite-placeholder {
+.sprite-canvas {
     width: 160px;
     height: 160px;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 2px dashed #666;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    color: #666;
-    font-weight: bold;
-    position: relative; /* สำคัญ: เพื่อให้เงาฐาน (::after) อิงตำแหน่งจากกล่องนี้ */
+    /* บังคับให้ภาพพื้นหลังขยายเป็น 3 เท่า เพื่อให้แสดงผลทีละ 1 ช่องจากตาราง 3x3 */
+    background-size: 300% 300%; 
+    background-repeat: no-repeat;
+    image-rendering: pixelated; /* รักษาความคมชัดของ Pixel */
+    position: relative;
+    z-index: 2;
 }
 
-/* สร้างเงาจำลองที่พื้นให้ดูเหมือนยืนอยู่ */
-.sprite-placeholder::after {
+/* สร้างเงาใต้เท้า */
+.sprite-canvas::after {
     content: '';
     position: absolute;
-    bottom: -20px; /* ขยับเงาลงไปใต้กล่อง */
+    bottom: -10px;
+    left: 15%;
     width: 70%;
     height: 15px;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 50%; /* ทำให้เป็นวงรี */
-    z-index: 1;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    z-index: -1;
 }
 
-/* เผื่อไว้สำหรับภาพ Pixel Art ในอนาคต ให้ภาพคมชัดไม่เบลอ */
-.sprite-placeholder img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    image-rendering: pixelated; /* ทำให้ภาพ Pixel ขยายแล้วไม่แตก/เบลอ */
-    position: relative;
-    z-index: 2; /* ให้อยู่เหนือเงา */
+/* --- กำหนดภาพของแต่ละสาย --- */
+.char-aero { background-image: url('../../Frontend/asset/Character/aero_action.png'); }
+.char-flex { background-image: url('../../Frontend/asset/Character/aero_action.png'); } /* อ้างอิงไฟล์รูปที่คุณส่งมา */
+.char-torque { background-image: url('../../Frontend/asset/Character/torque_action.png'); }
+
+/* --- กำหนดตำแหน่งภาพแต่ละ Action (อิงจากตาราง 3x3) --- */
+.act-idle { background-position: 0% 50%; }    /* แถวกลาง ซ้ายสุด: ท่ายืนเตรียมพร้อม */
+.act-attack { background-position: 0% 0%; }   /* แถวบน ซ้ายสุด: ปล่อยพลัง */
+.act-strike { background-position: 50% 0%; }  /* แถวบน ตรงกลาง: หมุนตัวเตะ/ฟาด */
+.act-magic { background-position: 100% 0%; }  /* แถวบน ขวาสุด: ทุบพื้นน้ำกระจาย */
+
+.act-defend { background-position: 50% 50%; } /* แถวกลาง ตรงกลาง: กางโล่ป้องกัน */
+.act-counter { background-position: 100% 50%;}/* แถวกลาง ขวาสุด: กางโล่สะท้อน */
+
+.act-hit { background-position: 0% 100%; }    /* แถวล่าง ซ้ายสุด: โดนโจมตีผงะ */
+.act-lowhp { background-position: 50% 100%; } /* แถวล่าง ตรงกลาง: คุกเข่าหอบ */
+.act-dead { background-position: 100% 100%; } /* แถวล่าง ขวาสุด: นอนตาย */
+
+/* กลับด้านรูปฝั่งศัตรูให้หันหน้าเข้าหาเรา */
+.enemy-sprite {
+    transform: scaleX(-1); 
 }
 
 /* ================= แผงควบคุมด้านล่าง ================= */
 .control-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 20px;
-    background-color: #111;
-    border-top: 4px solid #555;
+    background-color: #000;
+    border-top: 4px solid #fff;
 }
 
 .battle-log {
@@ -143,6 +161,10 @@ body {
     color: #888;
 }
 
+.battle-log p {
+    line-height: 3;
+}
+
 .enemy-action {
     color: #ff9800;
 }
@@ -153,24 +175,36 @@ body {
 }
 
 .action-buttons button {
-    padding: 15px 25px;
-    font-size: 16px;
-    font-weight: bold;
-    font-family: inherit;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 12px;
+    padding: 15px;
+    margin: 5px;
     cursor: pointer;
-    border: 2px solid #000;
-    border-radius: 8px;
+    background-color: #e0e0e0;
+    border: 4px solid #fff;
+    box-shadow: 4px 4px 0px #000;
     text-transform: uppercase;
-    transition: all 0.2s;
 }
 
-.btn-atk { background-color: #e0e0e0; }
-.btn-str { background-color: #ff9800; color: #000; }
-.btn-mag { background-color: #2196f3; color: #fff; }
+.btn-atk { color: #000; }
+.btn-str { color: #000; }
+.btn-mag { color: #000; }
 
 .action-buttons button:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+}
+
+.action-buttons button:active:not(:disabled) {
+    transform: translate(4px, 4px);
+    box-shadow: 0px 0px 0px #000;
+}
+
+.action-buttons button:disabled {
+    background-color: #555;
+    border-color: #888;
+    color: #aaa;
+    box-shadow: 4px 4px 0px #222;
 }
 
 .action-buttons button:disabled {
@@ -210,4 +244,10 @@ body {
 
 .stat-alloc-buttons button:hover {
     background-color: #666;
+}
+
+.level-badge {
+    color: #fff;
+    background-color: transparent;
+    font-size: 12px;
 }
