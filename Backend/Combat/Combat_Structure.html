@@ -1,21 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Combat System</title>
     <link rel="stylesheet" href="Combat_Decoration.css">
 </head>
+
 <body>
     <div class="combat-wrapper">
-        
+
         <!-- โซนด้านบน: แถบสถานะ (HUD) -->
         <div class="hud-container">
-            
+
             <!-- ซ้ายบน: ฝั่งผู้เล่น -->
             <div class="hud-panel player-hud">
                 <h2 class="char-name">Hunter</h2>
-                <div class="hp-bar-bg"><div class="hp-bar player-hp" id="player-hp-bar"></div></div>
+                <div class="hp-bar-bg">
+                    <div class="hp-bar player-hp" id="player-hp-bar"></div>
+                </div>
                 <p class="hp-text" id="player-hp-text">100 / 100</p>
                 <div class="stats-row">
                     <span>ATK: <b id="player-atk">0</b></span>
@@ -27,7 +31,9 @@
             <!-- ขวาบน: ฝั่งศัตรู -->
             <div class="hud-panel enemy-hud">
                 <h2 class="char-name">Goblin</h2>
-                <div class="hp-bar-bg"><div class="hp-bar enemy-hp" id="enemy-hp-bar"></div></div>
+                <div class="hp-bar-bg">
+                    <div class="hp-bar enemy-hp" id="enemy-hp-bar"></div>
+                </div>
                 <p class="hp-text" id="enemy-hp-text">80 / 80</p>
                 <div class="stats-row">
                     <span>ATK: <b id="enemy-atk">0</b></span>
@@ -44,10 +50,31 @@
             <div class="sprite-placeholder player-sprite" id="player-sprite">
                 <span>Player<br>Sprite</span>
             </div>
-            
+
             <!-- ขวา: ฝั่งศัตรู -->
             <div class="sprite-placeholder enemy-sprite" id="enemy-sprite">
                 <span>Enemy<br>Sprite</span>
+            </div>
+
+            <div class="battle-stage">
+                <div class="sprite-placeholder player-sprite" id="player-sprite"><span>Player</span></div>
+                <div class="sprite-placeholder enemy-sprite" id="enemy-sprite"><span>Enemy</span></div>
+
+                <!-- หน้าต่าง Level Up (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+                <div id="level-up-modal" class="level-up-modal" style="display: none;">
+                    <h2>LEVEL UP!</h2>
+                    <p>Level: <span id="current-level">1</span></p>
+                    <p>Points: <span id="stat-points"
+                            style="color: #ffeb3b; font-weight: bold; font-size: 20px;">0</span></p>
+
+                    <div class="stat-alloc-buttons">
+                        <button onclick="allocateStat('atk')">ATK +1</button>
+                        <button onclick="allocateStat('def')">DEF +1</button>
+                        <button onclick="allocateStat('mag')">MAG +1</button>
+                    </div>
+                    <button onclick="closeLevelUpModal()" id="btn-close-modal" style="margin-top: 15px; width: 100%;"
+                        disabled>Confirm</button>
+                </div>
             </div>
         </div>
 
@@ -58,7 +85,7 @@
                 <p id="log-text">Wild Goblin appeared! Your turn.</p>
                 <p id="enemy-action-text" class="enemy-action">-</p>
             </div>
-            
+
             <div class="action-buttons">
                 <button onclick="handlePlayerAction('ATTACK')" id="btn-attack" class="btn-atk">Attack</button>
                 <button onclick="handlePlayerAction('STRIKE')" id="btn-strike" class="btn-str">Strike</button>
@@ -70,4 +97,5 @@
 
     <script src="Combat_Logic.js"></script>
 </body>
+
 </html>

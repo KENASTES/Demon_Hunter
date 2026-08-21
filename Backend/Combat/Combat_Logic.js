@@ -1,7 +1,26 @@
 // 1. Mock Data & State
-let player = { hp: 100, maxHp: 100, stats: { atk: 20, def: 15, mag: 25 } };
-let enemy = { hp: 80, maxHp: 80, stats: { atk: 18, def: 10, mag: 5 } };
+let player = { 
+    level: 1, exp: 0, expToNext: 100, statPoints: 0,
+    hp: 100, maxHp: 100, 
+    stats: { atk: 20, def: 15, mag: 25 } 
+};
 
+function generateEnemy(level) {
+    return {
+        name: "Goblin",
+        level: level,
+        hp: 60 + (level * 20),
+        maxHp: 60 + (level * 20),
+        expDrop: 40 + (level * 25), // ยิ่งเวลสูง ยิ่งดรอปเยอะ
+        stats: {
+            atk: 15 + (level * 3),
+            def: 10 + (level * 2),
+            mag: 5 + (level * 1)
+        }
+    };
+}
+
+let enemy = generateEnemy(player.level);
 let isPlayerAttacker = true; // true = เราตี, false = เราป้องกัน
 let isWaiting = false; // ป้องกันผู้เล่นกดปุ่มรัวๆ ตอนแอนิเมชันกำลังเล่น
 
@@ -150,6 +169,17 @@ async function handleTurn(playerMove) {
         logText.innerText += `\n-> COUNTER SUCCESS! ${attacker === player ? 'You' : 'Enemy'} took ${result.toAttacker} damage!`;
     }
 
+    if (enemy.hp <= 0) {
+        logText.innerText = "BATTLE WON!";
+        enemyActionText.innerText = "-";
+        gainExp(enemy.expDrop); // เรียกใช้ฟังก์ชันรับ EXP
+        return; 
+    } else if (player.hp <= 0) {
+        logText.innerText = "YOU DIED!";
+        enemyActionText.innerText = "-";
+        return; 
+    }
+
     updateUI();
     await sleep(1500);
 
@@ -169,6 +199,60 @@ async function handleTurn(playerMove) {
     
     isWaiting = false;
     toggleButtons(true);
+}
+
+async function gainExp(amount) {
+    player.exp += amount;
+    logText.innerText = `You gained ${amount} EXP!`;
+    updateUI();
+
+    await sleep(1000);
+
+    if (player.exp >= player.expToNext) {
+        player.level++;
+        player.exp -= player.expToNext; // หัก EXP ที่ใช้ไป
+        player.expToNext = Math.floor(player.expToNext * 1.5); // เพิ่มเพดาน EXP สำหรับเลเวลถัดไป
+        player.statPoints += 3; // ได้พ้อยท์อัปสเตตัส 3 แต้ม
+        
+        // ฟื้นฟู HP เต็มเมื่อเวลอัป (เหมือนเกม RPG ทั่วไป)
+        player.maxHp += 10;
+        player.hp = player.maxHp; 
+
+        logText.innerText = `LEVEL UP! You reached Lv.${player.level}!`;
+        showLevelUpModal();
+    } else {
+        logText.innerText = `Battle Ended.`;
+        // ตรงนี้ในอนาคตจะส่งคำสั่งกลับไปฝั่ง Map
+    }
+}
+
+function showLevelUpModal() {
+    document.getElementById('level-up-modal').style.display = 'block';
+    updateModalUI();
+}
+
+function updateModalUI() {
+    document.getElementById('current-level').innerText = player.level;
+    document.getElementById('stat-points').innerText = player.statPoints;
+    
+    // บังคับให้ปุ่ม Confirm กดได้ก็ต่อเมื่อใช้แต้มหมดแล้ว
+    const btnClose = document.getElementById('btn-close-modal');
+    btnClose.disabled = player.statPoints > 0;
+}
+
+function allocateStat(statName) {
+    if (player.statPoints > 0) {
+        player.stats[statName]++;
+        player.statPoints--;
+        updateUI(); // อัปเดตตัวเลขซ้ายบนแบบ Real-time
+        updateModalUI();
+    }
+}
+
+function closeLevelUpModal() {
+    document.getElementById('level-up-modal').style.display = 'none';
+    logText.innerText = `Stats upgraded! Battle Ended.`;
+    // ตรงนี้ในอนาคตจะส่งคำสั่งกลับไปฝั่ง Map
 }
 
 // 6. Initialize (เริ่มเกม)

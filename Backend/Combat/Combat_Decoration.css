@@ -179,3 +179,35 @@ body {
     cursor: not-allowed;
     border-color: #222;
 }
+
+.level-up-modal {
+    position: absolute;
+    background-color: #222;
+    border: 4px solid #ffeb3b;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(255, 235, 59, 0.5);
+    z-index: 100;
+}
+
+.level-up-modal h2 {
+    color: #ffeb3b;
+    margin-top: 0;
+}
+
+.stat-alloc-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.stat-alloc-buttons button {
+    background-color: #444;
+    color: #fff;
+    padding: 10px;
+}
+
+.stat-alloc-buttons button:hover {
+    background-color: #666;
+}
