@@ -101,10 +101,19 @@ function updateUI() {
     document.getElementById('player-hp-text').innerText = `${player.hp} / ${player.maxHp}`;
     document.getElementById('player-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
     
-    // อัปเดตฝั่งศัตรู
+    // อัปเดตสเตตัสฝั่งผู้เล่น
+    document.getElementById('player-atk').innerText = player.stats.atk;
+    document.getElementById('player-def').innerText = player.stats.def;
+    document.getElementById('player-mag').innerText = player.stats.mag;
+    
+    // อัปเดตเลือดฝั่งศัตรู
     document.getElementById('enemy-hp-text').innerText = `${enemy.hp} / ${enemy.maxHp}`;
     document.getElementById('enemy-hp-bar').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
-}
+    
+    // อัปเดตสเตตัสฝั่งศัตรู
+    document.getElementById('enemy-atk').innerText = enemy.stats.atk;
+    document.getElementById('enemy-def').innerText = enemy.stats.def;
+    document.getElementById('enemy-mag').innerText = enemy.stats.mag;}
 
 // Initialize UI ครั้งแรก
 updateUI();
