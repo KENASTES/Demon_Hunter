@@ -3,9 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Combat System</title>
+    <link rel="stylesheet" href="Combat_Decoration.css">
 </head>
 <body>
-    
+    <div class="combat-container">
+        <!-- ฝั่งผู้เล่น -->
+        <div class="character-panel player-panel">
+            <h2>Player</h2>
+            <div class="hp-bar-container"><div class="hp-bar" id="player-hp-bar"></div></div>
+            <p id="player-hp-text">100 / 100</p>
+            
+            <div class="action-buttons">
+                <button onclick="handlePlayerAction('ATTACK')" id="btn-attack">Attack</button>
+                <button onclick="handlePlayerAction('STRIKE')" id="btn-strike">Strike</button>
+                <button onclick="handlePlayerAction('MAGIC')" id="btn-magic">Magic</button>
+            </div>
+        </div>
+
+        <!-- ตรงกลาง: ล็อกการต่อสู้ -->
+        <div class="battle-log">
+            <h3>Battle Log</h3>
+            <p id="log-text">Wild Goblin appeared! Your turn.</p>
+        </div>
+
+        <!-- ฝั่งศัตรู -->
+        <div class="character-panel enemy-panel">
+            <h2>Goblin</h2>
+            <div class="hp-bar-container"><div class="hp-bar" id="enemy-hp-bar"></div></div>
+            <p id="enemy-hp-text">80 / 80</p>
+            <p id="enemy-action-text" class="enemy-action">-</p>
+        </div>
+    </div>
+
+    <script src="Combat_Logic.js"></script>
 </body>
 </html>
