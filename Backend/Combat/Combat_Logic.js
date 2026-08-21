@@ -1,119 +1,176 @@
-// 1. Mock Data
+// 1. Mock Data & State
 let player = { hp: 100, maxHp: 100, stats: { atk: 20, def: 15, mag: 25 } };
 let enemy = { hp: 80, maxHp: 80, stats: { atk: 18, def: 10, mag: 5 } };
-let isPlayerTurn = true;
+
+let isPlayerAttacker = true; // true = เราตี, false = เราป้องกัน
+let isWaiting = false; // ป้องกันผู้เล่นกดปุ่มรัวๆ ตอนแอนิเมชันกำลังเล่น
 
 // 2. DOM Elements
 const logText = document.getElementById('log-text');
 const enemyActionText = document.getElementById('enemy-action-text');
-const buttons = document.querySelectorAll('.action-buttons button');
+const btn1 = document.getElementById('btn-attack');
+const btn2 = document.getElementById('btn-strike');
+const btn3 = document.getElementById('btn-magic');
 
-// 3. Core Logic: ตารางเป่ายิ้งฉุบ
-function calculateDamage(pMove, eMove) {
-    let damageToEnemy = 0;
-    let damageToPlayer = 0;
+// 3. Core Logic: ตารางคำนวณดาเมจ (ปรับสมการใหม่ให้ตีเข้าเสมอ)
+function calculateDamage(attacker, defender, atkMove, defMove) {
+    let dmgToDefender = 0;
+    let dmgToAttacker = 0;
 
-    if (pMove === 'ATTACK') {
-        if (eMove === 'DEFEND') {
-            damageToEnemy = Math.max(1, player.stats.atk - (enemy.stats.def * 1.8));
+    // ดึงค่าสเตตัสมาเก็บในตัวแปรสั้นๆ เพื่อให้สูตรดูอ่านง่าย
+    const a_atk = attacker.stats.atk;
+    const a_def = attacker.stats.def;
+    const a_mag = attacker.stats.mag;
+    
+    const d_atk = defender.stats.atk;
+    const d_def = defender.stats.def;
+    const d_mag = defender.stats.mag; // ในที่นี้ใช้ MAG เป็นค่าต้านทานเวทย์ไปในตัว
+
+    // ฟังก์ชันคำนวณสมการ RPG มาตรฐาน: (Power^2) / (Power + Defense)
+    const calcHit = (power, resistance) => {
+        return (power * power) / (power + resistance);
+    };
+
+    if (atkMove === 'ATTACK') {
+        if (defMove === 'DEFEND') {
+            // โจมตีปกติ เจอป้องกัน: ฝั่งรับได้โบนัส DEF 2 เท่า
+            dmgToDefender = calcHit(a_atk, d_def * 2);
         } else {
-            damageToEnemy = Math.max(1, player.stats.atk - enemy.stats.def);
+            // โจมตีปกติ: หักลบด้วย DEF ปกติ
+            dmgToDefender = calcHit(a_atk, d_def);
         }
     } 
-    else if (pMove === 'STRIKE') {
-        if (eMove === 'COUNTER') {
-            damageToPlayer = Math.max(1, enemy.stats.atk * 1.8); // โดนสวน
-            logText.innerText += `\nCountered! You took ${damageToPlayer} damage.`;
+    else if (atkMove === 'STRIKE') {
+        if (defMove === 'COUNTER') {
+            // โจมตีหนัก โดนสวนกลับ: ผู้โจมตีรับดาเมจแทน โดยศัตรูสวนด้วย ATK 1.5 เท่า เจาะ DEF เรา
+            dmgToAttacker = calcHit(d_atk * 1.5, a_def); 
         } else {
-            damageToEnemy = Math.max(1, (player.stats.atk * 2) - enemy.stats.def); // ทะลุ Defend/Clense
+            // โจมตีหนัก ทะลุการป้องกัน: พลังโจมตี (ATK) ของเราคูณ 2 แต่ศัตรูใช้ DEF ปกติ
+            dmgToDefender = calcHit(a_atk * 2, d_def); 
         }
     } 
-    else if (pMove === 'MAGIC') {
-        if (eMove === 'CLENSE') {
-            damageToEnemy = 0; // ป้องกันเวทย์สมบูรณ์
-            logText.innerText += `\nEnemy clensed your magic!`;
+    else if (atkMove === 'MAGIC') {
+        if (defMove === 'CLENSE') {
+            // เวทย์ เจอ ล้างเวทย์: ดาเมจเป็น 0 สมบูรณ์แบบ
+            dmgToDefender = 0; 
         } else {
-            damageToEnemy = Math.max(1, player.stats.mag); // ทะลุกายภาพ
+            // เวทย์: ใช้ MAG ฝั่งเรา โจมตีใส่ MAG ฝั่งศัตรู
+            dmgToDefender = calcHit(a_mag * 1.5, d_mag); 
         }
     }
 
-    return { toEnemy: Math.floor(damageToEnemy), toPlayer: Math.floor(damageToPlayer) };
+    // สุ่มดาเมจแกว่ง (Variance ±10%) แล้วปัดเศษให้เป็นจำนวนเต็ม
+    const variance = (val) => Math.floor(val * (0.9 + Math.random() * 0.2));
+    
+    return { 
+        toDefender: variance(dmgToDefender), 
+        toAttacker: variance(dmgToAttacker) 
+    };
 }
 
-// 4. ฟังก์ชันหน่วงเวลา
+// 4. UI Controllers
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 5. Flow การต่อสู้
-async function handlePlayerAction(playerMove) {
-    if (!isPlayerTurn) return;
-    isPlayerTurn = false;
-    toggleButtons(false);
-
-    // ล้างข้อความเก่า
-    enemyActionText.innerText = "-";
-    logText.innerText = `You used ${playerMove}!`;
-
-    await sleep(800); // หน่วงเวลาให้ศัตรูคิด
-
-    // สุ่มท่าศัตรู
-    const enemyMoves = ['DEFEND', 'COUNTER', 'CLENSE'];
-    const enemyMove = enemyMoves[Math.floor(Math.random() * enemyMoves.length)];
-    enemyActionText.innerText = `Uses: ${enemyMove}`;
-
-    await sleep(800); // หน่วงเวลาแสดงท่าศัตรู
-
-    // คำนวณผลลัพธ์
-    const result = calculateDamage(playerMove, enemyMove);
-    
-    // อัปเดต HP
-    enemy.hp = Math.max(0, enemy.hp - result.toEnemy);
-    player.hp = Math.max(0, player.hp - result.toPlayer);
-    
-    if (result.toEnemy > 0) logText.innerText += `\nDealt ${result.toEnemy} damage!`;
-
-    updateUI();
-
-    await sleep(1000);
-
-    // เช็คผลแพ้ชนะ
-    if (enemy.hp <= 0) {
-        logText.innerText = "You Win!";
-        return; // จบเกม
-    } else if (player.hp <= 0) {
-        logText.innerText = "You Died!";
-        return; // จบเกม
-    }
-
-    // เริ่มเทิร์นใหม่
-    logText.innerText = "Your turn.";
-    enemyActionText.innerText = "-";
-    isPlayerTurn = true;
-    toggleButtons(true);
-}
-
-// 6. Utility Functions
 function toggleButtons(state) {
-    buttons.forEach(btn => btn.disabled = !state);
+    btn1.disabled = !state;
+    btn2.disabled = !state;
+    btn3.disabled = !state;
 }
 
 function updateUI() {
-    // อัปเดตฝั่งผู้เล่น
     document.getElementById('player-hp-text').innerText = `${player.hp} / ${player.maxHp}`;
     document.getElementById('player-hp-bar').style.width = `${(player.hp / player.maxHp) * 100}%`;
-    
-    // อัปเดตสเตตัสฝั่งผู้เล่น
     document.getElementById('player-atk').innerText = player.stats.atk;
     document.getElementById('player-def').innerText = player.stats.def;
     document.getElementById('player-mag').innerText = player.stats.mag;
     
-    // อัปเดตเลือดฝั่งศัตรู
     document.getElementById('enemy-hp-text').innerText = `${enemy.hp} / ${enemy.maxHp}`;
     document.getElementById('enemy-hp-bar').style.width = `${(enemy.hp / enemy.maxHp) * 100}%`;
-    
-    // อัปเดตสเตตัสฝั่งศัตรู
     document.getElementById('enemy-atk').innerText = enemy.stats.atk;
     document.getElementById('enemy-def').innerText = enemy.stats.def;
-    document.getElementById('enemy-mag').innerText = enemy.stats.mag;}
+    document.getElementById('enemy-mag').innerText = enemy.stats.mag;
 
-// Initialize UI ครั้งแรก
+    // เปลี่ยนข้อความและฟังก์ชันของปุ่มตามสถานะว่าเราเป็นฝ่าย "รุก" หรือ "รับ"
+    if (isPlayerAttacker) {
+        btn1.innerText = "Attack";  btn1.onclick = () => handleTurn('ATTACK');
+        btn2.innerText = "Strike";  btn2.onclick = () => handleTurn('STRIKE');
+        btn3.innerText = "Magic";   btn3.onclick = () => handleTurn('MAGIC');
+    } else {
+        btn1.innerText = "Defend";  btn1.onclick = () => handleTurn('DEFEND');
+        btn2.innerText = "Counter"; btn2.onclick = () => handleTurn('COUNTER');
+        btn3.innerText = "Clense";  btn3.onclick = () => handleTurn('CLENSE');
+    }
+}
+
+// 5. Flow การต่อสู้ (สลับเทิร์น)
+async function handleTurn(playerMove) {
+    if (isWaiting) return;
+    isWaiting = true;
+    toggleButtons(false);
+
+    let atkMove, defMove, attacker, defender, enemyMove;
+
+    // เฟส 1: ระบุว่าใครเป็นคนตี ใครเป็นคนรับ
+    if (isPlayerAttacker) {
+        const enemyDefMoves = ['DEFEND', 'COUNTER', 'CLENSE'];
+        enemyMove = enemyDefMoves[Math.floor(Math.random() * enemyDefMoves.length)];
+        atkMove = playerMove;
+        defMove = enemyMove;
+        attacker = player;
+        defender = enemy;
+        logText.innerText = `You prepare to ${atkMove}...`;
+    } else {
+        const enemyAtkMoves = ['ATTACK', 'STRIKE', 'MAGIC'];
+        enemyMove = enemyAtkMoves[Math.floor(Math.random() * enemyAtkMoves.length)];
+        atkMove = enemyMove;
+        defMove = playerMove;
+        attacker = enemy;
+        defender = player;
+        logText.innerText = `Enemy prepares to ${atkMove}! You use ${defMove}.`;
+    }
+
+    await sleep(800);
+    enemyActionText.innerText = `Enemy choice: ?????`; // สร้างความตื่นเต้น
+    await sleep(600);
+    enemyActionText.innerText = `Enemy choice: ${enemyMove}`;
+
+    // เฟส 2: คำนวณดาเมจ
+    const result = calculateDamage(attacker, defender, atkMove, defMove);
+    defender.hp = Math.max(0, defender.hp - result.toDefender);
+    attacker.hp = Math.max(0, attacker.hp - result.toAttacker);
+    
+    // เฟส 3: รายงานผล (Combat Log)
+    if (result.toDefender > 0) {
+        logText.innerText += `\n-> ${attacker === player ? 'Enemy' : 'You'} took ${result.toDefender} damage!`;
+    } else if (result.toDefender === 0 && atkMove === 'MAGIC' && defMove === 'CLENSE') {
+        logText.innerText += `\n-> Magic was clensed! No damage.`;
+    }
+
+    if (result.toAttacker > 0) {
+        logText.innerText += `\n-> COUNTER SUCCESS! ${attacker === player ? 'You' : 'Enemy'} took ${result.toAttacker} damage!`;
+    }
+
+    updateUI();
+    await sleep(1500);
+
+    // เฟส 4: เช็คผลแพ้ชนะ
+    if (enemy.hp <= 0 || player.hp <= 0) {
+        logText.innerText = player.hp > 0 ? "BATTLE WON!" : "YOU DIED!";
+        enemyActionText.innerText = "-";
+        return; 
+    }
+
+    // เฟส 5: สลับเทิร์นและเตรียมเริ่มรอบใหม่
+    isPlayerAttacker = !isPlayerAttacker;
+    updateUI(); // เปลี่ยนชุดปุ่ม
+    
+    logText.innerText = isPlayerAttacker ? "Your turn to ATTACK!" : "Enemy is preparing to attack. Choose DEFENSE!";
+    enemyActionText.innerText = "-";
+    
+    isWaiting = false;
+    toggleButtons(true);
+}
+
+// 6. Initialize (เริ่มเกม)
 updateUI();
+logText.innerText = "Combat starts! Your turn to ATTACK!";
