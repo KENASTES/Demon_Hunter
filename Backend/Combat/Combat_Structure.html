@@ -51,14 +51,14 @@
 
         <div class="battle-stage">
             <div class="battle-stage">
-            <!-- ซ้าย: ฝั่งผู้เล่น (เลือกสาย Flex ท่ายืนรอ) -->
-            <div class="sprite-canvas char-flex act-idle" id="player-sprite"></div>
-            
-            <!-- หน้าต่าง Level Up (คงโค้ดเดิมไว้) ... -->
-            
-            <!-- ขวา: ฝั่งศัตรู (สมมติให้ศัตรูเป็นสาย Torque) -->
-            <div class="sprite-canvas enemy-sprite char-torque act-idle" id="enemy-sprite"></div>
-        </div>
+                <!-- ซ้าย: ฝั่งผู้เล่น (เลือกสาย Flex ท่ายืนรอ) -->
+                <div class="sprite-canvas char-flex act-idle" id="player-sprite"></div>
+
+                <!-- หน้าต่าง Level Up (คงโค้ดเดิมไว้) ... -->
+
+                <!-- ขวา: ฝั่งศัตรู (สมมติให้ศัตรูเป็นสาย Torque) -->
+                <div class="sprite-canvas enemy-sprite char-torque act-idle" id="enemy-sprite"></div>
+            </div>
             <!-- หน้าต่าง Level Up (ซ่อนไว้เป็นค่าเริ่มต้น) -->
             <div id="level-up-modal" class="level-up-modal" style="display: none;">
                 <h2>LEVEL UP!</h2>
@@ -92,11 +92,17 @@
             </div>
         </div>
 
-    </div>
+        <div id="ai-countdown" class="ai-countdown" style="display: none;">3</div>
 
-    <div id="webcam-container" style="position: absolute; bottom: 20px; right: 20px; border: 4px solid #fff; border-radius: 8px; overflow: hidden; box-shadow: 4px 4px 0px #000; z-index: 50;">
+    </div> <!-- ปิด combat-wrapper -->
+
+
+    <div id="webcam-container"
+        style="position: absolute; bottom: 20px; right: 20px; border: 4px solid #fff; border-radius: 8px; overflow: hidden; box-shadow: 4px 4px 0px #000; z-index: 50;">
         <canvas id="canvas"></canvas>
-        <div style="background: #000; color: #fff; text-align: center; font-size: 10px; padding: 5px;" id="ai-status">Loading AI...</div>
+        <div style="background: #000; color: #fff; text-align: center; font-size: 10px; padding: 5px;" id="ai-status">
+            Loading AI...</div>
+            <div id="ai-countdown" class="ai-countdown" style="display: none;"></div>
     </div>
 
     <script src="Combat_Logic.js"></script>
