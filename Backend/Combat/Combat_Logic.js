@@ -1027,13 +1027,15 @@ async function aiLoop() {
 }
 
 async function predictPose() {
-    if (!aiModel || !webcam || isWaiting || isModalOpen()) {
-        return;
-    }
+    if (!aiModel || !webcam) return;
 
     const { pose, posenetOutput } = await aiModel.estimatePose(webcam.canvas);
     const prediction = await aiModel.predict(posenetOutput);
     drawPose(pose);
+
+    if (!battleStarted || isWaiting || isModalOpen()) {
+        return;
+    }
 
     let highestProb = 0;
     let bestClass = "";
@@ -1050,20 +1052,24 @@ async function predictPose() {
         return;
     }
 
+    if (highestProb < 0.8) {
+        aiReadyMessage("Pose unclear. Hold steady.", true);
+        return;
+    }
+
     const normalized = normalizePoseLabel(bestClass);
-    if (battleStarted && isPlayerAttacker && poseCountdownActive) {
+
+    if (poseCountdownActive) {
         aiReadyMessage(`Lock pose: ${bestClass} (${Math.round(highestProb * 100)}%)`);
         latestPoseLabel = normalized;
         latestPoseProbability = highestProb;
         return;
     }
 
-    if (battleStarted && isPlayerAttacker) {
-        aiReadyMessage(`Waiting for countdown... ${bestClass} (${Math.round(highestProb * 100)}%)`);
-    } else if (battleStarted) {
-        aiReadyMessage(`Enemy turn... ${bestClass} (${Math.round(highestProb * 100)}%)`);
+    if (isPlayerAttacker) {
+        aiReadyMessage(`Your Turn... ${bestClass} (${Math.round(highestProb * 100)}%)`);
     } else {
-        aiReadyMessage("AI Ready. Press START BATTLE.");
+        aiReadyMessage(`Enemy Turn... ${bestClass} (${Math.round(highestProb * 100)}%)`);
     }
 
     latestPoseLabel = normalized;

@@ -187,14 +187,26 @@ body {
 }
 
 .battle-stage {
+    position: relative;
     flex: 1;
+    
+    /* โครงสร้างเลย์เอาต์ (ใช้ Grid แบ่ง 3 ส่วน: ซ้าย กลาง ขวา) */
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 10px;
     padding: 10px 6%;
-    background:
-        linear-gradient(180deg, rgba(20, 20, 20, 0.7), rgba(0, 0, 0, 0.95));
+
+    /* ================= ใส่ภาพฉากหลัง ================= */
+    /* นำ Gradient สีดำเดิมมาทับซ้อนกับรูปภาพ เพื่อความเท่และให้ UI อ่านง่าย */
+    background-image: linear-gradient(180deg, rgba(20, 20, 20, 0.7), rgba(0, 0, 0, 0.55)),
+                      url('https://raw.githubusercontent.com/KENASTES/Demon_Hunter/main/Frontend/asset/Map/battlemap.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated; /* ให้ภาพคงความคมชัดแบบ Pixel Art */
+    /* =============================================== */
+
     border: 4px solid #fff;
     box-shadow: 5px 5px 0 #000;
 }
@@ -349,7 +361,7 @@ body {
 
 .sprite-label {
     margin: 0;
-    font-size: 10px;
+    font-size: 25px;
     color: #fff;
     text-shadow: 2px 2px 0 #000;
 }
@@ -408,12 +420,12 @@ body {
 }
 
 .battle-log {
-    min-height: 130px;
+    min-height: 120px;
 }
 
 .battle-log h3 {
     margin: 0 0 12px 0;
-    font-size: 12px;
+    font-size: 24px;
     color: #bbb;
 }
 
@@ -663,4 +675,27 @@ body {
     20% { transform: translate(-50%, -20px) scale(1.2); opacity: 1; }
     80% { transform: translate(-50%, -40px) scale(1); opacity: 1; }
     100% { transform: translate(-50%, -60px) scale(1); opacity: 0; }
+}
+
+.ai-status {
+    position: absolute;
+    /* ปรับ top เพื่อเลื่อนขึ้น/ลง ให้อยู่ใต้กรอบเวลาพอดี (ลองแก้จาก 55% เป็น 60% หรือ 65% ดูได้ครับ) */
+    top: 65%; 
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    color: #00ffff; /* สีฟ้าสว่างให้เด่นๆ */
+    background-color: rgba(0, 0, 0, 0.7); /* พื้นหลังดำโปร่งใส กันกลืนกับฉากหลัง */
+    border: 1px solid #fff;
+    padding: 8px 16px;
+    border-radius: 4px;
+    text-shadow: 1px 1px 0px #000;
+    z-index: 100;
+    
+    pointer-events: none; /* ป้องกันเมาส์ไปโดน */
+    text-align: center;
+    white-space: nowrap; /* ไม่ให้ข้อความตกบรรทัด */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.5);
 }
