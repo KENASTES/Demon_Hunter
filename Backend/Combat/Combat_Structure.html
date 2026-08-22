@@ -12,11 +12,7 @@
 
 <body>
     <div class="combat-wrapper">
-
-        <!-- โซนด้านบน: แถบสถานะ (HUD) -->
-        <div class="hud-container">
-
-            <!-- ซ้ายบน: ฝั่งผู้เล่น -->
+        <header class="hud-container">
             <div class="hud-panel player-hud">
                 <h2 class="char-name">Hunter <span class="level-badge" id="player-level-text">Lv.1</span></h2>
                 <div class="hp-bar-bg">
@@ -24,85 +20,89 @@
                 </div>
                 <p class="hp-text" id="player-hp-text">100 / 100</p>
                 <div class="stats-row">
-                    <span>ATK: <b id="player-atk">0</b></span>
-                    <span>DEF: <b id="player-def">0</b></span>
-                    <span>MAG: <b id="player-mag">0</b></span>
+                    <span>ATK: <b id="player-atk">20</b></span>
+                    <span>DEF: <b id="player-def">15</b></span>
+                    <span>MAG: <b id="player-mag">25</b></span>
+                    <span>FORM: <b id="player-form-text">FLEX</b></span>
                 </div>
             </div>
 
-            <!-- ขวาบน: ฝั่งศัตรู -->
+            <div class="hud-panel battle-info">
+                <h2 class="char-name center-title">Combat Arena</h2>
+                <p class="battle-status" id="stage-banner">Press START BATTLE to begin.</p>
+                <div class="status-strip">
+                    <div class="mini-stat">Round <b id="round-text">1</b></div>
+                    <div class="mini-stat" id="turn-label">Player Turn</div>
+                </div>
+                <button type="button" id="btn-start-battle" class="btn-start-battle">Start Battle</button>
+            </div>
+
             <div class="hud-panel enemy-hud">
-                <h2 class="char-name">Goblin <span class="level-badge" id="enemy-level-text">Lv.1</span></h2>
+                <h2 class="char-name" id="enemy-name">Goblin <span class="level-badge" id="enemy-level-text">Lv.1</span></h2>
                 <div class="hp-bar-bg">
                     <div class="hp-bar enemy-hp" id="enemy-hp-bar"></div>
                 </div>
                 <p class="hp-text" id="enemy-hp-text">80 / 80</p>
                 <div class="stats-row">
-                    <span>ATK: <b id="enemy-atk">0</b></span>
-                    <span>DEF: <b id="enemy-def">0</b></span>
-                    <span>MAG: <b id="enemy-mag">0</b></span>
+                    <span>ATK: <b id="enemy-atk">15</b></span>
+                    <span>DEF: <b id="enemy-def">10</b></span>
+                    <span>MAG: <b id="enemy-mag">5</b></span>
                 </div>
             </div>
+        </header>
 
-        </div>
-
-        <!-- โซนตรงกลาง: พื้นที่ว่างสำหรับแสดงกราฟิก/Pixel Art ในอนาคต -->
-
-
-        <div class="battle-stage">
-            <div class="battle-stage">
-                <!-- ซ้าย: ฝั่งผู้เล่น (เลือกสาย Flex ท่ายืนรอ) -->
+        <main class="battle-stage">
+            <div class="sprite-wrap">
                 <div class="sprite-canvas char-flex act-idle" id="player-sprite"></div>
-
-                <!-- หน้าต่าง Level Up (คงโค้ดเดิมไว้) ... -->
-
-                <!-- ขวา: ฝั่งศัตรู (สมมติให้ศัตรูเป็นสาย Torque) -->
-                <div class="sprite-canvas enemy-sprite char-torque act-idle" id="enemy-sprite"></div>
+                <p class="sprite-label">You</p>
             </div>
-            <!-- หน้าต่าง Level Up (ซ่อนไว้เป็นค่าเริ่มต้น) -->
-            <div id="level-up-modal" class="level-up-modal" style="display: none;">
-                <h2>LEVEL UP!</h2>
-                <p>Level: <span id="current-level">1</span></p>
-                <p>Points: <span id="stat-points" style="color: #ffeb3b; font-weight: bold; font-size: 20px;">0</span>
-                </p>
 
-                <div class="stat-alloc-buttons">
-                    <button onclick="allocateStat('atk')">ATK +1</button>
-                    <button onclick="allocateStat('def')">DEF +1</button>
-                    <button onclick="allocateStat('mag')">MAG +1</button>
-                </div>
-                <button onclick="closeLevelUpModal()" id="btn-close-modal" style="margin-top: 15px; width: 100%;"
-                    disabled>Confirm</button>
+            <div class="battle-center">
+                <div class="battle-circle"></div>
+                <div class="battle-circle inner"></div>
+                <div class="battle-line"></div>
+                <div class="battle-banner" id="enemy-action-text">-</div>
             </div>
-        </div>
 
-        <!-- โซนด้านล่าง: กล่องข้อความและปุ่มกด -->
-        <div class="control-container">
+            <div class="sprite-wrap">
+                <div class="sprite-canvas enemy-sprite enemy-placeholder act-idle" id="enemy-sprite"></div>
+                <p class="sprite-label" id="enemy-banner-name">Goblin</p>
+            </div>
+        </main>
+
+        <section class="control-container">
             <div class="battle-log">
                 <h3>Battle Log</h3>
-                <p id="log-text">Wild Goblin appeared! Your turn.</p>
-                <p id="enemy-action-text" class="enemy-action">-</p>
-                <button onclick="forceLevelUp()" class="btn-dev">Force Lv.UP</button>
+                <p id="log-text">Wild enemy appeared!</p>
             </div>
 
-            <div class="action-buttons">
-                <button onclick="handlePlayerAction('ATTACK')" id="btn-attack" class="btn-atk">Attack</button>
-                <button onclick="handlePlayerAction('STRIKE')" id="btn-strike" class="btn-str">Strike</button>
-                <button onclick="handlePlayerAction('MAGIC')" id="btn-magic" class="btn-mag">Magic</button>
+            <div class="webcam-box">
+                <div class="webcam-title">Pose Camera</div>
+                <div id="webcam-container" class="webcam-container">
+                    <canvas id="canvas"></canvas>
+                    <div id="ai-status" class="ai-status">Loading AI...</div>
+                </div>
+                <p class="webcam-hint">Idle = Normal</p>
             </div>
+        </section>
+
+        <div id="ai-countdown" class="ai-countdown" style="display:none;">3</div>
+    </div>
+
+    <div id="level-up-modal" class="level-up-modal" hidden>
+        <div class="level-up-card">
+            <h2>LEVEL UP!</h2>
+            <p>Level: <span id="current-level">1</span></p>
+            <p>Points: <span id="stat-points">0</span></p>
+            <div class="stat-alloc-buttons">
+                <button type="button" onclick="allocateStat('atk')">ATK +1</button>
+                <button type="button" onclick="allocateStat('def')">DEF +1</button>
+                <button type="button" onclick="allocateStat('mag')">MAG +1</button>
+            </div>
+            <button type="button" onclick="closeLevelUpModal()" id="btn-close-modal" class="btn-confirm" disabled>
+                Confirm
+            </button>
         </div>
-
-        <div id="ai-countdown" class="ai-countdown" style="display: none;">3</div>
-
-    </div> <!-- ปิด combat-wrapper -->
-
-
-    <div id="webcam-container"
-        style="position: absolute; bottom: 20px; right: 20px; border: 4px solid #fff; border-radius: 8px; overflow: hidden; box-shadow: 4px 4px 0px #000; z-index: 50;">
-        <canvas id="canvas"></canvas>
-        <div style="background: #000; color: #fff; text-align: center; font-size: 10px; padding: 5px;" id="ai-status">
-            Loading AI...</div>
-            <div id="ai-countdown" class="ai-countdown" style="display: none;"></div>
     </div>
 
     <script src="Combat_Logic.js"></script>
