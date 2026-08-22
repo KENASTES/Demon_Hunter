@@ -171,6 +171,51 @@ const DOM = {
 // ==========================================
 // Utilities
 // ==========================================
+
+function showMoveText(playerMoveName, enemyMoveName) {
+    let container = document.getElementById('move-display-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'move-display-container';
+        container.className = 'move-display-container';
+        
+        const pMove = document.createElement('div');
+        pMove.id = 'player-move-display';
+        
+        const eMove = document.createElement('div');
+        eMove.id = 'enemy-move-display';
+        
+        container.appendChild(pMove);
+        container.appendChild(eMove);
+        
+        const stage = document.querySelector('.battle-stage');
+        if (stage) stage.appendChild(container);
+        else document.body.appendChild(container);
+    }
+
+    container.style.display = 'flex';
+    const pDisplay = document.getElementById('player-move-display');
+    const eDisplay = document.getElementById('enemy-move-display');
+
+    pDisplay.className = '';
+    eDisplay.className = '';
+    void pDisplay.offsetWidth; 
+    void eDisplay.offsetWidth;
+
+    pDisplay.textContent = playerMoveName;
+    eDisplay.textContent = enemyMoveName;
+
+    pDisplay.className = 'move-text-player';
+    eDisplay.className = 'move-text-enemy';
+}
+
+function hideMoveText() {
+    const container = document.getElementById('move-display-container');
+    if (container) {
+        container.style.display = 'none';
+    }
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function clamp(value, min, max) {
@@ -243,9 +288,7 @@ function startBattle() {
     setStageBanner("Battle started. Hold your pose until countdown reaches 0.");
     aiReadyMessage("Battle ready. Hold your pose.");
     updateUI();
-    if (isPlayerAttacker) {
-        beginPoseCountdown();
-    }
+    beginPoseCountdown();
 }
 
 function getBattleStats(target) {
@@ -295,6 +338,34 @@ function playAnimation(targetId, actionClass, durationMs = 0) {
             updateSpriteState(el, target);
         }, durationMs);
     }
+}
+
+function showDamageNumber(targetId, amount) {
+    const targetEl = document.getElementById(targetId);
+    const stage = document.querySelector('.battle-stage');
+    if (!targetEl || !stage) return;
+
+    const dmgEl = document.createElement('div');
+    dmgEl.className = 'damage-float';
+    
+    if (amount > 0) {
+        dmgEl.textContent = `-${amount}`;
+    } else {
+        dmgEl.textContent = "0";
+        dmgEl.classList.add("blocked");
+    }
+
+    stage.appendChild(dmgEl);
+
+    const targetRect = targetEl.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    
+    dmgEl.style.left = `${targetRect.left - stageRect.left + (targetRect.width / 2)}px`;
+    dmgEl.style.top = `${targetRect.top - stageRect.top - 15}px`; // ขยับขึ้นเหนือหัวนิดหน่อย
+
+    setTimeout(() => {
+        if(dmgEl.parentNode) dmgEl.parentNode.removeChild(dmgEl);
+    }, 1000);
 }
 
 function isPlayerMove(move) {
@@ -455,10 +526,12 @@ function resetTurnFlags() {
 
 function getPoseMove(poseName) {
     const key = normalizePoseLabel(poseName);
-    if (key === "idle") {
-        return "ATTACK";
+    
+    if (key === "idle" || key === "normal") {
+        return null;
     }
-    if (key === "physical" || key === "normal") {
+
+    if (key === "physical") {
         return "ATTACK";
     }
     if (key === "magic") {
@@ -476,6 +549,7 @@ function getPoseMove(poseName) {
     if (key === "counter") {
         return "COUNTER";
     }
+    
     return null;
 }
 
@@ -495,7 +569,7 @@ function hideCountdownFrame() {
 }
 
 async function beginPoseCountdown() {
-    if (!battleStarted || !isPlayerAttacker || isWaiting || isModalOpen() || poseCountdownActive) {
+    if (!battleStarted || isWaiting || isModalOpen() || poseCountdownActive) {
         return;
     }
 
@@ -505,9 +579,9 @@ async function beginPoseCountdown() {
     latestPoseProbability = 0;
     aiReadyMessage("Hold your pose...");
 
-    const frames = ["3", "2", "1", "0"];
+    const frames = ["5","4","3", "2", "1", "0"];
     for (const frame of frames) {
-        if (runToken !== countdownToken || !battleStarted || isWaiting || isModalOpen() || !isPlayerAttacker) {
+        if (runToken !== countdownToken || !battleStarted || isWaiting || isModalOpen()) {
             poseCountdownActive = false;
             hideCountdownFrame();
             return;
@@ -518,7 +592,7 @@ async function beginPoseCountdown() {
 
     hideCountdownFrame();
 
-    if (runToken !== countdownToken || !battleStarted || isWaiting || isModalOpen() || !isPlayerAttacker) {
+    if (runToken !== countdownToken || !battleStarted || isWaiting || isModalOpen()) {
         poseCountdownActive = false;
         return;
     }
@@ -531,9 +605,9 @@ async function beginPoseCountdown() {
     if (capturedProbability < 0.8) {
         pushLog("Pose missed. Try again on the next countdown.");
         poseCountdownActive = false;
-        if (battleStarted && isPlayerAttacker && !isWaiting && !isModalOpen()) {
+        if (battleStarted && !isWaiting && !isModalOpen()) {
             setTimeout(() => {
-                if (battleStarted && isPlayerAttacker && !isWaiting && !isModalOpen()) {
+                if (battleStarted && !isWaiting && !isModalOpen()) {
                     beginPoseCountdown();
                 }
             }, 350);
@@ -543,10 +617,10 @@ async function beginPoseCountdown() {
 
     const triggered = await triggerGameAction(capturedLabel);
     poseCountdownActive = false;
-    if (!triggered && battleStarted && isPlayerAttacker && !isWaiting && !isModalOpen()) {
+    if (!triggered && battleStarted && !isWaiting && !isModalOpen()) {
         pushLog("Wrong pose for this phase. Try again.");
         setTimeout(() => {
-            if (battleStarted && isPlayerAttacker && !isWaiting && !isModalOpen()) {
+            if (battleStarted && !isWaiting && !isModalOpen()) {
                 beginPoseCountdown();
             }
         }, 350);
@@ -744,6 +818,8 @@ async function handleTurn(playerMove) {
             : `${enemy.name} used ${moveToDisplay(atkMove)}. You answer with ${moveToDisplay(defMove)}.`
     );
 
+    showMoveText(moveToDisplay(normalizedMove), moveToDisplay(enemyMove));
+
     await sleep(450);
     await runActionSequence(attackerSpriteId, defenderSpriteId, atkMove, defMove, attackerName);
 
@@ -751,9 +827,14 @@ async function handleTurn(playerMove) {
 
     if (result.toDefender > 0) {
         playAnimation(defenderSpriteId, "act-hit", 340);
+        showDamageNumber(defenderSpriteId, result.toDefender);
+    } else {
+        showDamageNumber(defenderSpriteId, 0); // โชว์เลข 0 ให้รู้ว่ากันได้หรือ Cleanse สำเร็จ
     }
+
     if (result.toAttacker > 0) {
         playAnimation(attackerSpriteId, "act-hit", 340);
+        showDamageNumber(attackerSpriteId, result.toAttacker);
     }
 
     if (result.toDefender > 0) {
@@ -772,11 +853,13 @@ async function handleTurn(playerMove) {
     await sleep(900);
 
     if (enemy.hp <= 0) {
+        hideMoveText();
         await handleEnemyDefeat();
         return;
     }
 
     if (player.hp <= 0) {
+        hideMoveText();
         await handlePlayerDefeat();
         return;
     }
@@ -784,6 +867,9 @@ async function handleTurn(playerMove) {
     isPlayerAttacker = !isPlayerAttacker;
     battleRound += 1;
     isWaiting = false;
+
+    hideMoveText();
+
     setEnemyAction("-");
     setStageBanner(
         isPlayerAttacker
@@ -792,7 +878,9 @@ async function handleTurn(playerMove) {
     );
     resetTurnFlags();
     updateUI();
-    if (battleStarted && isPlayerAttacker && !isWaiting && !isModalOpen()) {
+
+    // 🟢 เอา isPlayerAttacker ออก เพื่อให้เทิร์นป้องกันก็นับถอยหลังต่อได้
+    if (battleStarted && !isWaiting && !isModalOpen()) {
         beginPoseCountdown();
     }
 }
@@ -826,6 +914,10 @@ function closeLevelUpModal() {
 
     modalOpenSet(false);
     updateUI();
+
+    if (battleStarted && !isWaiting) {
+        beginPoseCountdown();
+    }
 }
 
 function showLevelUpModal() {
@@ -840,6 +932,8 @@ async function gainExp(amount) {
     updateUI();
     await sleep(350);
 
+    let leveledUp = false;
+
     while (player.exp >= player.expToNext) {
         player.exp -= player.expToNext;
         player.level += 1;
@@ -850,7 +944,7 @@ async function gainExp(amount) {
     }
 
     if (player.statPoints > 0) {
-        pushLog(`LEVEL UP! You reached Lv.${player.level}.`);
+        pushLog(`LEVEL UP! You reached Lv.${player.level}. HP Fully Restored!`);
         showLevelUpModal();
         updateUI();
     }
