@@ -348,6 +348,116 @@ function closeLevelUpModal() {
     // ตรงนี้ในอนาคตจะส่งคำสั่งกลับไปฝั่ง Map
 }
 
+// ================= ระบบ AI Teachable Machine =================
+const AI_URL = "https://teachablemachine.withgoogle.com/models/6Sl3sq4VT/";
+let aiModel, webcam, ctx, maxPredictions;
+let poseHoldTime = 0;
+let currentDetectedPose = "";
+
+// 1. ฟังก์ชันเริ่มต้นโหลด AI (จะถูกเรียกตอนเปิดหน้าเว็บ)
+async function initAI() {
+    const modelURL = AI_URL + "model.json";
+    const metadataURL = AI_URL + "metadata.json";
+
+    // โหลดโมเดล
+    aiModel = await tmPose.load(modelURL, metadataURL);
+    maxPredictions = aiModel.getTotalClasses();
+
+    // ตั้งค่ากล้อง
+    const size = 150; // ขนาดกล้องบนหน้าจอ (Pixels)
+    const flip = true; // กลับซ้ายขวาเหมือนกระจก
+    webcam = new tmPose.Webcam(size, size, flip);
+    await webcam.setup(); // ขออนุญาตเปิดกล้อง
+    await webcam.play();
+    window.requestAnimationFrame(aiLoop);
+
+    // ผูกกล้องเข้ากับ Canvas
+    const canvas = document.getElementById("canvas");
+    canvas.width = size; 
+    canvas.height = size;
+    ctx = canvas.getContext("2d");
+    
+    document.getElementById("ai-status").innerText = "AI Ready! Strike a pose!";
+}
+
+// 2. Loop ดึงภาพจากกล้องไปประมวลผลตลอดเวลา
+async function aiLoop(timestamp) {
+    webcam.update(); 
+    await predictPose();
+    window.requestAnimationFrame(aiLoop);
+}
+
+// 3. ทายผลท่าทาง (Predict)
+async function predictPose() {
+    const { pose, posenetOutput } = await aiModel.estimatePose(webcam.canvas);
+    const prediction = await aiModel.predict(posenetOutput);
+
+    // วาดโครงกระดูกบนจอ
+    drawPose(pose);
+
+    // ถ้าเกมกำลังรันแอนิเมชันอยู่ ให้ข้ามการรับคำสั่งไปก่อน
+    if (isWaiting) return;
+
+    // หาว่าท่าไหนมีความมั่นใจ (Probability) สูงสุด
+    let highestProb = 0;
+    let bestClass = "";
+    for (let i = 0; i < maxPredictions; i++) {
+        if (prediction[i].probability > highestProb) {
+            highestProb = prediction[i].probability;
+            bestClass = prediction[i].className;
+        }
+    }
+
+    // ถ้าระบบมั่นใจเกิน 80% ว่าผู้เล่นทำท่านี้
+    if (highestProb > 0.80) {
+        // อัปเดตข้อความบอกสถานะใต้กล้อง
+        document.getElementById("ai-status").innerText = `Pose: ${bestClass} (${Math.round(highestProb * 100)}%)`;
+
+        // ถ้านิ่งอยู่ในท่าเดิม ให้บวกเวลาสะสม
+        if (currentDetectedPose === bestClass) {
+            poseHoldTime++;
+        } else {
+            currentDetectedPose = bestClass;
+            poseHoldTime = 0;
+        }
+
+        // ต้องค้างท่าเดิมประมาณ 25 เฟรม (ประมาณครึ่งวินาที) คำสั่งถึงจะทำงาน
+        if (poseHoldTime > 25 && bestClass !== "idle") { 
+            triggerGameAction(bestClass);
+            poseHoldTime = 0; // รีเซ็ตเวลาหลังจากออกคำสั่งไปแล้ว
+        }
+    }
+}
+
+// 4. แปลงชื่อคลาสจาก AI เป็นท่าในเกม
+function triggerGameAction(aiClassName) {
+    // เช็คว่าชื่อคลาสตรงกับเทิร์นรุกหรือรับ
+    if (isPlayerAttacker) {
+        if (aiClassName === "Physical" || aiClassName === "Normal") handleTurn('ATTACK');
+        else if (aiClassName === "Strike") handleTurn('STRIKE');
+        else if (aiClassName === "Magic") handleTurn('MAGIC');
+    } else {
+        if (aiClassName === "Physical Defense") handleTurn('DEFEND');
+        else if (aiClassName === "Counter") handleTurn('COUNTER');
+        else if (aiClassName === "Magic Defense") handleTurn('CLENSE');
+    }
+}
+
+// 5. วาดจุดข้อต่อและเส้นลงบนกล้อง
+function drawPose(pose) {
+    if (webcam.canvas) {
+        ctx.drawImage(webcam.canvas, 0, 0);
+        if (pose) {
+            const minPartConfidence = 0.5;
+            tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+            tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+        }
+    }
+}
+
+// เริ่มระบบ AI ทันทีเมื่อโหลดสคริปต์เสร็จ
+initAI();
+
 // 6. Initialize (เริ่มเกม)
 updateUI();
 logText.innerText = "Combat starts! Your turn to ATTACK!";
